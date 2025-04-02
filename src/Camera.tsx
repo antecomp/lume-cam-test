@@ -1,11 +1,12 @@
 import { Element3D, PerspectiveCamera, XYZNumberValues } from "lume";
 import { Portal } from "solid-js/web";
-import {createSignal, createEffect} from "solid-js"
+import {createSignal, createEffect, For} from "solid-js"
 
 enum CameraMode {
     SPIN1 = "Spin Body",
     SPIN2 = "Spin Both",
     STATIONARY = "Both stationary",
+    STATIONARY_MED_POSITION_RESET = "Force stationary by resetting position.",
     FORCE_STATIONARY = "Force Stationary (Function Override)"
 }
 
@@ -37,15 +38,19 @@ export default function Camera() {
                 camRef.rotation = (x,y,z) => [x,y,z];
                 bodyRef.rotation = new XYZNumberValues(0, 0, 0);
                 camRef.rotation = new XYZNumberValues(0, 0, 0);
-
-            // Additional Notes: 
-            /*
-            I also tried setting body/camera rotation to "null" first, 
-            but that seemed to bug out some of my billboard component (which gets the cameras rotation/transform matrix)
-
-            This demo seems to more reliably catch the bug, for some reason the implementation in my game
-            only has this issue with the perspective-camera, while the body's element3d properly disposes the function on change.
-            */
+                    /*
+                        I also tried setting body/camera rotation to "null" first, 
+                        but that seemed to bug out some of my billboard component (which gets the cameras rotation/transform matrix)
+                    */
+                break;
+            case CameraMode.STATIONARY_MED_POSITION_RESET: // This works!
+                // It appears that resetting the *position* triggers the function disposal!
+                // This must be why my game was only having problems with the camera not the body,
+                // I change the body position but not the cameras!
+                bodyRef.position = "0 0 0";
+                camRef.position = "0 0 0";
+                bodyRef.rotation = new XYZNumberValues(0, 0, 0);
+                camRef.rotation = new XYZNumberValues(0, 0, 0);
         }
     })
 
@@ -56,10 +61,13 @@ export default function Camera() {
             </lume-element3d>
 
             <Portal mount={document.body}>
-                <button onClick={() => setCamMode(CameraMode.SPIN1)}>{CameraMode.SPIN1}</button>
+                <For each={Object.entries(CameraMode)}>
+                    {([_modename, mode]) => <button onClick={() => setCamMode(mode)}>{mode}</button>}
+                </For>
+                {/* <button onClick={() => setCamMode(CameraMode.SPIN1)}>{CameraMode.SPIN1}</button>
                 <button onClick={() => setCamMode(CameraMode.SPIN2)}>{CameraMode.SPIN2}</button>
                 <button onClick={() => setCamMode(CameraMode.STATIONARY)}>{CameraMode.STATIONARY}</button>
-                <button onClick={() => setCamMode(CameraMode.FORCE_STATIONARY)}>{CameraMode.FORCE_STATIONARY}</button>
+                <button onClick={() => setCamMode(CameraMode.FORCE_STATIONARY)}>{CameraMode.FORCE_STATIONARY}</button> */}
                 <br/>
                 Currently: {camMode()}
             </Portal>
